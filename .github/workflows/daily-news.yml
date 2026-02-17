@@ -1,0 +1,30 @@
+name: Daily News Digest
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Täglich um 6:00 UTC (= 7:00 MEZ / 8:00 MESZ)
+  workflow_dispatch:       # Ermöglicht manuelles Auslösen zum Testen
+
+jobs:
+  news-digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Dependencies installieren
+        run: pip install -r requirements.txt
+
+      - name: News Agent ausführen
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python agent.py

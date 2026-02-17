@@ -1,0 +1,20 @@
+profile: |
+  AI/ML, Large Language Models, Open Source AI,
+  Developer Tools, Startups, Technologie-Trends
+
+sources:
+  - name: Hacker News
+    url: https://hnrss.org/frontpage
+  - name: Ars Technica
+    url: https://feeds.arstechnica.com/arstechnica/technology-lab
+  - name: The Verge
+    url: https://www.theverge.com/rss/index.xml
+  - name: TechCrunch
+    url: https://techcrunch.com/feed/
+  - name: Heise
+    url: https://www.heise.de/rss/heise-top-atom.xml
+
+max_articles: 7
+max_article_fetch: 60
+article_max_age_hours: 24
+language: Deutsch
