@@ -24,8 +24,12 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Google Cloud Credentials schreiben
-        if: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON != '' }}
-        run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > /tmp/gcloud-credentials.json
+        run: |
+          if [ -n "$GOOGLE_CREDS" ]; then
+            echo "$GOOGLE_CREDS" > /tmp/gcloud-credentials.json
+          fi
+        env:
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
 
       - name: News Agent ausführen
         env:
