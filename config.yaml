@@ -1,18 +1,23 @@
 profile: |
-  AI/ML, Large Language Models, Open Source AI,
-  Developer Tools, Startups, Technologie-Trends
+  Große Sportereignisse, Weltfußball, Champions League,
+  Große politische Ereignisse weltweit, Wirtschaftsereignisse,
+  Musik und Popkultur
 
 sources:
-  - name: Hacker News
-    url: https://hnrss.org/frontpage
-  - name: Ars Technica
-    url: https://feeds.arstechnica.com/arstechnica/technology-lab
-  - name: The Verge
-    url: https://www.theverge.com/rss/index.xml
-  - name: TechCrunch
-    url: https://techcrunch.com/feed/
-  - name: Heise
-    url: https://www.heise.de/rss/heise-top-atom.xml
+  - name: Kicker (Fußball)
+    url: https://www.kicker.de/news/fussball/rss.xml
+  - name: Sportschau
+    url: https://www.sportschau.de/index.xml
+  - name: Tagesschau
+    url: https://www.tagesschau.de/xml/rss2/
+  - name: Spiegel International
+    url: https://www.spiegel.de/international/index.rss
+  - name: Handelsblatt (Wirtschaft)
+    url: https://www.handelsblatt.com/contentexport/feed/top-themen
+  - name: Rolling Stone (Musik)
+    url: https://www.rollingstone.de/feed/
+  - name: Billboard (Popkultur)
+    url: https://www.billboard.com/feed/
 
 max_articles: 7
 max_article_fetch: 60
