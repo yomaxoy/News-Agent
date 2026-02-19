@@ -8,7 +8,7 @@ on:
 jobs:
   news-digest:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10  # Erhöht wegen TTS-Synthese
 
     steps:
       - name: Repository auschecken
@@ -23,8 +23,13 @@ jobs:
       - name: Dependencies installieren
         run: pip install -r requirements.txt
 
+      - name: Google Cloud Credentials schreiben
+        if: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON != '' }}
+        run: echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > /tmp/gcloud-credentials.json
+
       - name: News Agent ausführen
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcloud-credentials.json
         run: python agent.py

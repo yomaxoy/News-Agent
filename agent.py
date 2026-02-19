@@ -1,10 +1,14 @@
+import io
 import os
+import struct
+import wave
 import yaml
 import feedparser
 import requests
 from openai import OpenAI
 from datetime import datetime, timezone, timedelta
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from google.cloud import texttospeech
 
 
 def load_config():
@@ -177,6 +181,134 @@ Am Ende: Ein kurzes Fazit mit dem wichtigsten Trend des Tages."""
     return response.choices[0].message.content
 
 
+@retry(
+    retry=retry_if_exception_type(Exception),
+    wait=wait_exponential(multiplier=1, min=4, max=60),
+    stop=stop_after_attempt(3),
+    reraise=True,
+)
+def generate_podcast_script(digest, config):
+    """
+    Wandelt den fertigen Digest in ein natürliches Zwei-Personen-Dialogskript um.
+    Host (Alex) und Guest (Sara) wechseln sich ab und kommentieren die News.
+    Das Format ist speziell auf Google Cloud TTS mit zwei Stimmen ausgelegt.
+    Jede Zeile beginnt mit "ALEX:" oder "SARA:" als Sprecher-Marker.
+    """
+    client = OpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=os.environ["GROQ_API_KEY"],
+    )
+
+    today = datetime.now(timezone.utc).strftime("%d.%m.%Y")
+
+    prompt = f"""Du bist Autor eines täglichen Tech-News-Podcasts auf Deutsch. Heute ist der {today}.
+
+Hier ist der heutige News-Digest:
+
+{digest}
+
+---
+AUFGABE:
+Schreibe ein natürliches Gesprächsskript für zwei Moderatoren:
+- ALEX: Der Haupt-Moderator, erklärt die News sachlich und strukturiert
+- SARA: Die Co-Moderatorin, stellt kluge Nachfragen, liefert Kontext und Einordnung
+
+REGELN:
+- Jede Zeile beginnt mit genau "ALEX:" oder "SARA:" (kein anderes Format)
+- Natürliche Sprache, keine Bulletpoints oder Markdown
+- Kurze, verständliche Sätze (Podcast-Stil, nicht Vorlesungsstil)
+- Decke alle Artikel aus dem Digest ab
+- Intro: Alex begrüßt, Sara steigt mit erstem Thema ein
+- Outro: gemeinsames kurzes Fazit, Verabschiedung
+- Ziel: ca. 5 Minuten Sprechzeit (ca. 750 Wörter gesamt)
+
+Beginne direkt mit dem Skript, ohne Präambel."""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.6,
+        max_tokens=2048,
+    )
+
+    return response.choices[0].message.content
+
+
+def generate_podcast_audio(script, config, output_path):
+    """
+    Synthetisiert das Podcast-Skript mit Google Cloud TTS (WaveNet).
+    Jede Zeile wird mit der passenden Stimme (ALEX/SARA) vertont und
+    die Audio-Segmente werden zu einer einzigen MP3-Datei zusammengefügt.
+    Authentifizierung erfolgt über GOOGLE_APPLICATION_CREDENTIALS (Service Account JSON).
+    """
+    podcast_cfg = config.get("podcast", {})
+    voice_host = podcast_cfg.get("voice_host", "de-DE-Wavenet-B")
+    voice_guest = podcast_cfg.get("voice_guest", "de-DE-Wavenet-A")
+    speaking_rate = podcast_cfg.get("speaking_rate", 1.05)
+
+    client = texttospeech.TextToSpeechClient()
+
+    audio_segments = []
+    lines = [line.strip() for line in script.strip().split("\n") if line.strip()]
+
+    for line in lines:
+        if line.startswith("ALEX:"):
+            text = line[5:].strip()
+            voice_name = voice_host
+        elif line.startswith("SARA:"):
+            text = line[5:].strip()
+            voice_name = voice_guest
+        else:
+            # Zeilen ohne Sprecher-Marker überspringen
+            continue
+
+        if not text:
+            continue
+
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="de-DE",
+            name=voice_name,
+        )
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3,
+            speaking_rate=speaking_rate,
+        )
+
+        response = client.synthesize_speech(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config,
+        )
+        audio_segments.append(response.audio_content)
+
+    # Alle MP3-Segmente zu einer Datei zusammenfügen
+    with open(output_path, "wb") as f:
+        for segment in audio_segments:
+            f.write(segment)
+
+    size_kb = os.path.getsize(output_path) // 1024
+    print(f"Podcast gespeichert: {output_path} ({size_kb} KB, {len(audio_segments)} Segmente)")
+    return output_path
+
+
+def send_discord_file(file_path, webhook_url, message=""):
+    """
+    Lädt eine Datei (z.B. MP3) direkt als Anhang in Discord hoch.
+    Discord erlaubt Dateianhänge bis 8 MB über Webhooks.
+    """
+    with open(file_path, "rb") as f:
+        response = requests.post(
+            webhook_url,
+            data={"content": message, "username": "News Agent"},
+            files={"file": (os.path.basename(file_path), f, "audio/mpeg")},
+        )
+    if response.status_code == 200:
+        print(f"Podcast-Datei erfolgreich in Discord gepostet")
+    else:
+        print(f"Fehler beim Hochladen: {response.status_code} - {response.text}")
+
+
 if __name__ == "__main__":
     print("News Agent gestartet...")
 
@@ -195,10 +327,29 @@ if __name__ == "__main__":
         digest = generate_digest(articles, config)
         print("\n" + digest + "\n")
 
-        if os.environ.get("DISCORD_WEBHOOK_URL"):
-            send_discord(digest, os.environ["DISCORD_WEBHOOK_URL"])
+        webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
+        if webhook_url:
+            send_discord(digest, webhook_url)
         else:
             print("Kein DISCORD_WEBHOOK_URL gesetzt - nur Konsolenausgabe")
+
+        # Podcast generieren (optional, nur wenn aktiviert und Credentials vorhanden)
+        podcast_cfg = config.get("podcast", {})
+        if podcast_cfg.get("enabled") and os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+            print("Generiere Podcast-Skript...")
+            script = generate_podcast_script(digest, config)
+            print("Synthetisiere Audio mit Google Cloud TTS...")
+            output_file = podcast_cfg.get("output_file", "podcast.mp3")
+            generate_podcast_audio(script, config, output_file)
+            if webhook_url:
+                today = datetime.now(timezone.utc).strftime("%d.%m.%Y")
+                send_discord_file(
+                    output_file,
+                    webhook_url,
+                    message=f"**Daily News Podcast – {today}**",
+                )
+        elif podcast_cfg.get("enabled"):
+            print("Podcast deaktiviert: GOOGLE_APPLICATION_CREDENTIALS nicht gesetzt")
 
         print("Fertig!")
 

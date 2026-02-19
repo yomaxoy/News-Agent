@@ -18,3 +18,13 @@ max_articles: 7
 max_article_fetch: 60
 article_max_age_hours: 24
 language: Deutsch
+
+# Podcast-Einstellungen (Google Cloud TTS)
+podcast:
+  enabled: true
+  # WaveNet-Stimmen: natürlicher Klang, 1 Mio. Zeichen/Monat kostenlos
+  # Verfügbare deutsche WaveNet-Stimmen: de-DE-Wavenet-A (w), -B (m), -C (w), -D (m), -E (m), -F (w)
+  voice_host: de-DE-Wavenet-B      # Moderator (männlich)
+  voice_guest: de-DE-Wavenet-A     # Co-Moderatorin (weiblich)
+  speaking_rate: 1.05              # Sprechgeschwindigkeit (1.0 = normal, 1.1 = leicht schneller)
+  output_file: podcast.mp3
