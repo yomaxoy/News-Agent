@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
-from app.api.v1 import auth, sources
+from app.api.v1 import auth, sources, schedules
 
 load_dotenv()
 
@@ -24,6 +24,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(sources.router)
+app.include_router(schedules.router)
 
 @app.get("/api/health")
 async def health_check():
