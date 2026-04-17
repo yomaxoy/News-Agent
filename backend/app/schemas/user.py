@@ -1,12 +1,22 @@
 """User schemas for auth and user management"""
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
+import re
 
 class UserBase(BaseModel):
     email: EmailStr
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=72)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("Password must contain at least one digit")
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr

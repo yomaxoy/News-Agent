@@ -11,7 +11,7 @@ from app.config import settings
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # HTTP Bearer for JWT
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
@@ -57,6 +57,13 @@ def verify_token(token: str) -> Optional[int]:
 
 async def get_current_user(credentials = Depends(security)) -> int:
     """Get current authenticated user from JWT token"""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Missing authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token = credentials.credentials
     user_id = verify_token(token)
 
