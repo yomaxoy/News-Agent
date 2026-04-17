@@ -2,6 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Cache buster: 2026-04-17
 # Copy requirements
 COPY requirements.txt .
 
