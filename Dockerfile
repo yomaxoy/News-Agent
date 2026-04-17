@@ -2,8 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Build timestamp: 2026-04-17_22-21
-ENV BUILD_TIME="2026-04-17_22:21"
+# Build timestamp: 2026-04-17_22-23 (force rebuild)
+ENV BUILD_TIME="2026-04-17_22:23"
+RUN echo "Cache invalidation: $(date)" && rm -rf /usr/local/lib/python3.12/dist-packages/*
 
 # Install dependencies (using deps.txt to bypass Railway caching)
 COPY deps.txt .
