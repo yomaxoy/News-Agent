@@ -21,7 +21,11 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 # Set sqlalchemy.url from environment
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+if settings.DATABASE_URL:
+    config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+else:
+    # If no DATABASE_URL, use a dummy SQLite for safety
+    config.set_main_option("sqlalchemy.url", "sqlite:///./test.db")
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
