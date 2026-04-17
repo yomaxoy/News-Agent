@@ -2,12 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Cache buster: 2026-04-17
-# Copy requirements
-COPY requirements.txt .
-
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy application code
 COPY . .
