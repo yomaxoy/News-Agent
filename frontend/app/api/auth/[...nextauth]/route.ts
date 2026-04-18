@@ -15,8 +15,9 @@ const handler = NextAuth({
         }
 
         try {
+          const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
           const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+            `${apiUrl}/api/auth/login`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
