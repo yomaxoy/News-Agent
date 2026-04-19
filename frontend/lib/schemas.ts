@@ -3,7 +3,7 @@ import { z } from "zod";
 export const sourceSchema = z.object({
   name: z.string().min(1, "Name is required"),
   url: z.string().url("Invalid URL").startsWith("http", "URL must start with http"),
-  category: z.enum(["Tech", "Business", "News", "Entertainment", "Science", "Health", "Sport"]),
+  category: z.enum(["Tech", "Business", "News", "Entertainment", "Science", "Health", "Sport"]).optional().nullable(),
 });
 
 export const scheduleSchema = z.object({

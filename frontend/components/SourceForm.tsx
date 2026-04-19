@@ -35,7 +35,7 @@ export default function SourceForm({ initialData, onSuccess }: SourceFormProps) 
     formState: { errors },
   } = useForm<SourceFormData>({
     resolver: zodResolver(sourceSchema),
-    defaultValues: initialData || { max_articles: 7 },
+    defaultValues: initialData,
   });
 
   const urlValue = watch("url");
