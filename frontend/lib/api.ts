@@ -1,5 +1,4 @@
 import axios, { AxiosError } from "axios";
-import { getSession } from "next-auth/react";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
 
@@ -10,12 +9,15 @@ const api = axios.create({
   },
 });
 
+// Request interceptor to add JWT token
 api.interceptors.request.use(async (config) => {
-  const session = await getSession();
-  const sessionWithToken = session as any;
-  if (sessionWithToken?.access_token) {
-    config.headers.Authorization = `Bearer ${sessionWithToken.access_token}`;
+  // Try to get token from sessionStorage first (set during login)
+  let token = typeof window !== 'undefined' ? sessionStorage.getItem('auth_token') : null;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
