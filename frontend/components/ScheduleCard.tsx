@@ -11,6 +11,8 @@ interface ScheduleCardProps {
 
 export default function ScheduleCard({ schedule, onDelete }: ScheduleCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [runMessage, setRunMessage] = useState<string | null>(null);
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this schedule?")) return;
@@ -23,6 +25,20 @@ export default function ScheduleCard({ schedule, onDelete }: ScheduleCardProps) 
       alert("Failed to delete schedule");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleRunNow = async () => {
+    setIsRunning(true);
+    setRunMessage(null);
+    try {
+      const res = await api.post(`/api/schedules/${schedule.id}/run`, {});
+      setRunMessage(`✓ Digest generated with ${res.data.articles_processed} articles`);
+      setTimeout(() => setRunMessage(null), 5000);
+    } catch (err: any) {
+      setRunMessage(`✗ ${err.response?.data?.detail || "Failed to run schedule"}`);
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -55,9 +71,21 @@ export default function ScheduleCard({ schedule, onDelete }: ScheduleCardProps) 
               </span>
             )}
           </div>
+          {runMessage && (
+            <p className={`mt-3 text-sm font-medium ${runMessage.startsWith("✓") ? "text-green-600" : "text-red-600"}`}>
+              {runMessage}
+            </p>
+          )}
         </div>
 
-        <div className="flex items-center space-x-2 ml-4">
+        <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 ml-4">
+          <button
+            onClick={handleRunNow}
+            disabled={isRunning}
+            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
+          >
+            {isRunning ? "Running..." : "Run Now"}
+          </button>
           <Link
             href={`/dashboard/schedules/${schedule.id}`}
             className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"

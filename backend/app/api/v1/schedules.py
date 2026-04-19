@@ -10,6 +10,8 @@ from app.schemas.schedule import (
     ScheduleWithSources
 )
 from app.services.schedule import ScheduleService
+from app.services.digest import DigestService
+from app.db.models import ScheduleSource
 
 router = APIRouter(prefix="/api/schedules", tags=["schedules"])
 
@@ -69,3 +71,55 @@ async def delete_schedule(
     """Delete a schedule"""
     ScheduleService.delete_schedule(db, user_id, schedule_id)
     return None
+
+@router.post("/{schedule_id}/run", status_code=status.HTTP_200_OK)
+async def run_schedule_now(
+    schedule_id: int,
+    user_id: int = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Run a schedule immediately (generate digest now)"""
+    schedule = ScheduleService.get_schedule(db, user_id, schedule_id)
+
+    # Get all sources for this schedule
+    schedule_sources = db.query(ScheduleSource).filter(
+        ScheduleSource.schedule_id == schedule_id
+    ).all()
+    source_ids = [ss.source_id for ss in schedule_sources]
+
+    if not source_ids:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Schedule has no sources configured"
+        )
+
+    # Fetch and process articles
+    articles = DigestService.fetch_articles_from_sources(
+        db, source_ids, schedule.max_articles
+    )
+
+    if not articles:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No articles found from configured sources"
+        )
+
+    articles = DigestService.deduplicate_articles(articles)
+
+    # Generate digest
+    digest_content = DigestService.generate_digest(articles, max_articles=schedule.max_articles)
+
+    # Save digest
+    digest = DigestService.save_digest(db, schedule_id, digest_content)
+
+    # Update schedule last_run_at
+    ScheduleService.mark_schedule_run(db, schedule_id)
+
+    return {
+        "status": "success",
+        "digest_id": digest.id,
+        "articles_processed": len(articles),
+        "message": f"Digest generated with {len(articles)} articles"
+    }
