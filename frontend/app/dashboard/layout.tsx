@@ -35,8 +35,8 @@ export default function DashboardLayout({
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-          <main className="flex-1 overflow-auto">
-            <div className="py-4 px-4 sm:px-6 lg:px-8">
+          <main className="flex-1 overflow-auto mt-16 md:mt-0">
+            <div className="py-4 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
               {children}
             </div>
           </main>
