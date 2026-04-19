@@ -55,10 +55,10 @@ export default function RegisterPage() {
         return;
       }
 
-      const data = await res.json();
+      const responseData = await res.json();
       // Store token for authenticated requests
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('auth_token', data.access_token);
+        sessionStorage.setItem('auth_token', responseData.access_token);
       }
 
       router.push("/auth/login?registered=true");
