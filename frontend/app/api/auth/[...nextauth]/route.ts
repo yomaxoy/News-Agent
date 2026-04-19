@@ -32,8 +32,12 @@ const handler = NextAuth({
             return null;
           }
 
-          const user = await res.json();
-          return user;
+          const data = await res.json();
+          return {
+            id: data.user_id,
+            email: data.email,
+            token: data.access_token,
+          };
         } catch (error) {
           return null;
         }
