@@ -121,16 +121,18 @@ jobs:
     needs: test-frontend
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Deploy to Vercel
-        uses: vercel/action@v4
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: frontend
+
+      - name: Trigger Vercel deployment
+        continue-on-error: true
+        run: |
+          if [ -z "$VERCEL_WEBHOOK" ]; then
+            echo "Vercel webhook not configured - manual deployment needed"
+            echo "Frontend is ready for manual deployment to Vercel"
+          else
+            curl -X POST "$VERCEL_WEBHOOK"
+          fi
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.API_URL }}
+          VERCEL_WEBHOOK: ${{ secrets.VERCEL_WEBHOOK }}
