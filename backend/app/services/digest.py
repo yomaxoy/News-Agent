@@ -181,16 +181,24 @@ End with a brief summary of the most important trend today."""
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         lines = [f"Daily News Digest – {today}\n", "=" * 50]
 
-        for article in articles[:5]:
-            lines.append(f"\n**{article.title}**")
-            lines.append(f"Source: {article.source.name}")
-            if article.summary:
-                lines.append(article.summary[:300])
-            if article.url:
-                lines.append(f"Read more: {article.url}")
-            lines.append("---")
+        if not articles:
+            lines.append("\n⚠️ No articles available for this digest.")
+            lines.append("\nPlease check your sources are active and have recent content.")
+        else:
+            for article in articles[:5]:
+                lines.append(f"\n**{article.title}**")
+                lines.append(f"Source: {article.source.name}")
+                if article.summary:
+                    lines.append(article.summary[:300])
+                else:
+                    lines.append("(No summary available)")
+                if article.url:
+                    lines.append(f"Read more: {article.url}")
+                lines.append("---")
 
-        return "\n".join(lines)
+        digest_text = "\n".join(lines)
+        # Ensure we never return empty string
+        return digest_text if digest_text.strip() else "Daily News Digest Generated"
 
     @staticmethod
     def save_digest(

@@ -1,6 +1,7 @@
 """Schedule management endpoints"""
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+from datetime import datetime
 from app.db.database import get_db
 from app.core.security import get_current_user
 from app.schemas.schedule import (
@@ -108,16 +109,12 @@ async def run_schedule_now(
 
     articles = DigestService.deduplicate_articles(articles)
 
-    print(f"[DEBUG] After deduplication: {len(articles)} articles")
-    for article in articles[:3]:
-        print(f"  - {article.title[:50]}")
-
     # Generate digest
     digest_content = DigestService.generate_digest(articles, max_articles=schedule.max_articles)
 
-    print(f"[DEBUG] Generated digest length: {len(digest_content or '')}")
-    if digest_content:
-        print(f"[DEBUG] Digest preview: {digest_content[:100]}")
+    # Ensure content is never None or empty
+    if not digest_content or not digest_content.strip():
+        digest_content = f"Daily News Digest – {datetime.now().strftime('%Y-%m-%d')}\n\nNo content could be generated. Please check your sources."
 
     # Save digest
     digest = DigestService.save_digest(db, schedule_id, digest_content)
