@@ -1,15 +1,11 @@
 """Tests for authentication endpoints"""
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from app.main import app
 from app.db.models import User
 from app.core.security import hash_password
 
-client = TestClient(app)
-
 class TestRegister:
-    def test_register_success(self):
+    def test_register_success(self, client):
         """Test successful user registration"""
         response = client.post(
             "/api/auth/register",
@@ -25,7 +21,7 @@ class TestRegister:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
 
-    def test_register_duplicate_email(self):
+    def test_register_duplicate_email(self, client):
         """Test registration with duplicate email"""
         # First registration
         client.post(
@@ -47,7 +43,7 @@ class TestRegister:
         assert response.status_code == 409
         assert "already registered" in response.json()["detail"]
 
-    def test_register_invalid_email(self):
+    def test_register_invalid_email(self, client):
         """Test registration with invalid email"""
         response = client.post(
             "/api/auth/register",
@@ -58,7 +54,7 @@ class TestRegister:
         )
         assert response.status_code == 422  # Validation error
 
-    def test_register_weak_password(self):
+    def test_register_weak_password(self, client):
         """Test registration with weak password"""
         # No uppercase
         response = client.post(
@@ -80,7 +76,7 @@ class TestRegister:
         )
         assert response.status_code == 422
 
-    def test_register_short_password(self):
+    def test_register_short_password(self, client):
         """Test registration with short password"""
         response = client.post(
             "/api/auth/register",
@@ -93,7 +89,7 @@ class TestRegister:
 
 
 class TestLogin:
-    def test_login_success(self, db: Session):
+    def test_login_success(self, client, db: Session):
         """Test successful login"""
         # Create user
         user = User(
@@ -117,7 +113,7 @@ class TestLogin:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
 
-    def test_login_invalid_email(self):
+    def test_login_invalid_email(self, client):
         """Test login with non-existent email"""
         response = client.post(
             "/api/auth/login",
@@ -129,7 +125,7 @@ class TestLogin:
         assert response.status_code == 401
         assert "Invalid credentials" in response.json()["detail"]
 
-    def test_login_invalid_password(self, db: Session):
+    def test_login_invalid_password(self, client, db: Session):
         """Test login with wrong password"""
         # Create user
         user = User(
@@ -152,7 +148,7 @@ class TestLogin:
 
 
 class TestGetCurrentUser:
-    def test_get_current_user_success(self, db: Session):
+    def test_get_current_user_success(self, client, db: Session):
         """Test getting current user info with valid token"""
         # Create user
         user = User(
@@ -183,12 +179,12 @@ class TestGetCurrentUser:
         assert data["email"] == "getuser@test.com"
         assert data["email_verified"] is True
 
-    def test_get_current_user_no_token(self):
+    def test_get_current_user_no_token(self, client):
         """Test getting current user without token"""
         response = client.get("/api/auth/users/me")
         assert response.status_code == 403
 
-    def test_get_current_user_invalid_token(self):
+    def test_get_current_user_invalid_token(self, client):
         """Test getting current user with invalid token"""
         response = client.get(
             "/api/auth/users/me",
@@ -198,7 +194,7 @@ class TestGetCurrentUser:
 
 
 class TestVerifyEmail:
-    def test_verify_email_invalid_token(self):
+    def test_verify_email_invalid_token(self, client):
         """Test email verification with invalid token"""
         response = client.post(
             "/api/auth/verify-email",
@@ -209,7 +205,7 @@ class TestVerifyEmail:
 
 
 class TestPasswordReset:
-    def test_request_password_reset(self):
+    def test_request_password_reset(self, client):
         """Test password reset request"""
         response = client.post(
             "/api/auth/password-reset/request",
@@ -218,7 +214,7 @@ class TestPasswordReset:
         # Should return success regardless for security
         assert response.status_code == 200
 
-    def test_confirm_password_reset_invalid_token(self):
+    def test_confirm_password_reset_invalid_token(self, client):
         """Test password reset confirm with invalid token"""
         response = client.post(
             "/api/auth/password-reset/confirm",
@@ -232,7 +228,7 @@ class TestPasswordReset:
 
 
 class TestChangePassword:
-    def test_change_password_success(self, db: Session):
+    def test_change_password_success(self, client, db: Session):
         """Test changing password for authenticated user"""
         # Create user
         user = User(
@@ -273,7 +269,7 @@ class TestChangePassword:
         )
         assert login_response.status_code == 200
 
-    def test_change_password_wrong_old(self, db: Session):
+    def test_change_password_wrong_old(self, client, db: Session):
         """Test changing password with wrong old password"""
         # Create user
         user = User(

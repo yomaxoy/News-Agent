@@ -1,16 +1,12 @@
 """Tests for delivery service (Discord and Email)"""
 import pytest
 from unittest.mock import patch, MagicMock
-from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
-from app.main import app
 from app.db.models import User, Schedule, DeliveryChannel
 from app.core.security import hash_password
 from app.services.delivery import DeliveryService
 import json
-
-client = TestClient(app)
 
 class TestDiscordDelivery:
     def test_deliver_via_discord_success(self):
@@ -173,7 +169,7 @@ class TestEmailDelivery:
         assert text == digest_content
 
 class TestDeliveryAPI:
-    def test_create_discord_channel_success(self, db: Session):
+    def test_create_discord_channel_success(self, client, db: Session):
         """Test creating a Discord delivery channel"""
         # Setup
         user = User(email="delivery@test.com", password_hash=hash_password("SecurePassword123"))
@@ -213,7 +209,7 @@ class TestDeliveryAPI:
         assert data["type"] == "discord"
         assert data["schedule_id"] == schedule.id
 
-    def test_create_email_channel_success(self, db: Session):
+    def test_create_email_channel_success(self, client, db: Session):
         """Test creating an email delivery channel"""
         # Setup
         user = User(email="emailchannel@test.com", password_hash=hash_password("SecurePassword123"))
@@ -248,7 +244,7 @@ class TestDeliveryAPI:
         data = response.json()
         assert data["type"] == "email"
 
-    def test_create_channel_invalid_discord_url(self, db: Session):
+    def test_create_channel_invalid_discord_url(self, client, db: Session):
         """Test creating channel with invalid Discord webhook"""
         user = User(email="invaliddiscord@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -280,7 +276,7 @@ class TestDeliveryAPI:
 
         assert response.status_code == 400
 
-    def test_list_channels(self, db: Session):
+    def test_list_channels(self, client, db: Session):
         """Test listing delivery channels"""
         user = User(email="listchannels@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -327,7 +323,7 @@ class TestDeliveryAPI:
         data = response.json()
         assert len(data) == 2
 
-    def test_delete_channel(self, db: Session):
+    def test_delete_channel(self, client, db: Session):
         """Test deleting a delivery channel"""
         user = User(email="deletechannel@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -372,7 +368,7 @@ class TestDeliveryAPI:
         )
         assert len(response.json()) == 0
 
-    def test_channel_requires_auth(self):
+    def test_channel_requires_auth(self, client):
         """Test that channel endpoints require authentication"""
         response = client.get("/api/schedules/1/channels")
         assert response.status_code == 403

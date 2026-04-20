@@ -1,18 +1,14 @@
 """Tests for source management endpoints"""
 import pytest
 from unittest.mock import patch
-from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from app.main import app
 from app.db.models import User, Source
 from app.core.security import hash_password
 from app.schemas.source import FeedTestResponse
 
-client = TestClient(app)
-
 class TestSourceCRUD:
     @patch("app.services.source.SourceService.test_feed")
-    def test_create_source_success(self, mock_test_feed, db: Session):
+    def test_create_source_success(self, mock_test_feed, client, db: Session):
         """Test successful source creation"""
         # Mock the feed validation
         mock_test_feed.return_value = FeedTestResponse(valid=True, title="TechCrunch", entries=10)
@@ -45,7 +41,7 @@ class TestSourceCRUD:
         assert data["category"] == "Tech"
         assert data["id"] > 0
 
-    def test_create_source_no_auth(self):
+    def test_create_source_no_auth(self, client):
         """Test source creation without authentication"""
         response = client.post(
             "/api/sources",
@@ -57,7 +53,7 @@ class TestSourceCRUD:
         )
         assert response.status_code == 403
 
-    def test_create_source_invalid_url(self, db: Session):
+    def test_create_source_invalid_url(self, client, db: Session):
         """Test source creation with invalid URL"""
         user = User(email="sourcetest2@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -80,7 +76,7 @@ class TestSourceCRUD:
         )
         assert response.status_code == 422
 
-    def test_create_source_invalid_category(self, db: Session):
+    def test_create_source_invalid_category(self, client, db: Session):
         """Test source creation with invalid category"""
         user = User(email="sourcetest3@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -103,7 +99,7 @@ class TestSourceCRUD:
         )
         assert response.status_code == 422
 
-    def test_get_sources_list(self, db: Session):
+    def test_get_sources_list(self, client, db: Session):
         """Test listing user's sources"""
         user = User(email="listtest@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -132,7 +128,7 @@ class TestSourceCRUD:
         assert data[0]["name"] == "Source1"
         assert data[1]["name"] == "Source2"
 
-    def test_get_source_detail(self, db: Session):
+    def test_get_source_detail(self, client, db: Session):
         """Test getting source details"""
         user = User(email="detailtest@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -157,7 +153,7 @@ class TestSourceCRUD:
         assert data["id"] == source.id
         assert data["name"] == "MySource"
 
-    def test_get_source_not_owned(self, db: Session):
+    def test_get_source_not_owned(self, client, db: Session):
         """Test getting source not owned by user"""
         user1 = User(email="user1@test.com", password_hash=hash_password("SecurePassword123"))
         user2 = User(email="user2@test.com", password_hash=hash_password("SecurePassword123"))
@@ -181,7 +177,7 @@ class TestSourceCRUD:
         )
         assert response.status_code == 404
 
-    def test_update_source(self, db: Session):
+    def test_update_source(self, client, db: Session):
         """Test updating a source"""
         user = User(email="updatetest@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -207,7 +203,7 @@ class TestSourceCRUD:
         assert data["name"] == "NewName"
         assert data["category"] == "News"
 
-    def test_delete_source(self, db: Session):
+    def test_delete_source(self, client, db: Session):
         """Test deleting a source"""
         user = User(email="deletetest@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -238,7 +234,7 @@ class TestSourceCRUD:
         assert response.status_code == 404
 
 class TestRSSFeedValidation:
-    def test_categories_endpoint(self):
+    def test_categories_endpoint(self, client):
         """Test getting available categories"""
         response = client.get("/api/sources/categories")
         assert response.status_code == 200
@@ -248,7 +244,7 @@ class TestRSSFeedValidation:
         assert "Business" in data["categories"]
         assert "News" in data["categories"]
 
-    def test_feed_test_valid_rss(self):
+    def test_feed_test_valid_rss(self, client):
         """Test validating a valid RSS feed"""
         response = client.post(
             "/api/sources/test",
@@ -261,7 +257,7 @@ class TestRSSFeedValidation:
         assert "entries" in data
         assert isinstance(data["entries"], int)
 
-    def test_feed_test_invalid_url(self):
+    def test_feed_test_invalid_url(self, client):
         """Test validating an invalid URL"""
         response = client.post(
             "/api/sources/test",
@@ -272,7 +268,7 @@ class TestRSSFeedValidation:
         assert data["valid"] is False
         assert "error" in data
 
-    def test_feed_test_malformed_url(self):
+    def test_feed_test_malformed_url(self, client):
         """Test validating a malformed URL"""
         response = client.post(
             "/api/sources/test",
@@ -281,7 +277,7 @@ class TestRSSFeedValidation:
         assert response.status_code == 422
 
 class TestSourceAuthorization:
-    def test_list_only_own_sources(self, db: Session):
+    def test_list_only_own_sources(self, client, db: Session):
         """Test that users only see their own sources"""
         user1 = User(email="auth1@test.com", password_hash=hash_password("SecurePassword123"))
         user2 = User(email="auth2@test.com", password_hash=hash_password("SecurePassword123"))

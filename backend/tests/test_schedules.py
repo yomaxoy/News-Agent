@@ -1,17 +1,13 @@
 """Tests for schedule management"""
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone, timedelta
-from app.main import app
 from app.db.models import User, Source, Schedule
 from app.core.security import hash_password
 from app.services.schedule import ScheduleService
 
-client = TestClient(app)
-
 class TestScheduleCRUD:
-    def test_create_schedule_success(self, db: Session):
+    def test_create_schedule_success(self, client, db: Session):
         """Test successful schedule creation"""
         # Create user
         user = User(email="schedule@test.com", password_hash=hash_password("SecurePassword123"))
@@ -49,7 +45,7 @@ class TestScheduleCRUD:
         assert data["max_articles"] == 7
         assert data["next_run_at"] is not None
 
-    def test_create_schedule_invalid_cron(self, db: Session):
+    def test_create_schedule_invalid_cron(self, client, db: Session):
         """Test schedule creation with invalid cron expression"""
         user = User(email="schedule2@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -72,7 +68,7 @@ class TestScheduleCRUD:
         )
         assert response.status_code == 422
 
-    def test_get_schedules_list(self, db: Session):
+    def test_get_schedules_list(self, client, db: Session):
         """Test listing user's schedules"""
         # Create user
         user = User(email="listschedule@test.com", password_hash=hash_password("SecurePassword123"))
@@ -111,7 +107,7 @@ class TestScheduleCRUD:
         assert len(data) == 2
         assert data[0]["name"] == "Morning Digest"
 
-    def test_get_schedule_detail(self, db: Session):
+    def test_get_schedule_detail(self, client, db: Session):
         """Test getting schedule details"""
         user = User(email="detailschedule@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -141,7 +137,7 @@ class TestScheduleCRUD:
         assert data["id"] == schedule.id
         assert data["name"] == "Test Schedule"
 
-    def test_get_schedule_not_owned(self, db: Session):
+    def test_get_schedule_not_owned(self, client, db: Session):
         """Test getting schedule not owned by user"""
         user1 = User(email="user1sched@test.com", password_hash=hash_password("SecurePassword123"))
         user2 = User(email="user2sched@test.com", password_hash=hash_password("SecurePassword123"))
@@ -170,7 +166,7 @@ class TestScheduleCRUD:
         )
         assert response.status_code == 404
 
-    def test_update_schedule(self, db: Session):
+    def test_update_schedule(self, client, db: Session):
         """Test updating a schedule"""
         user = User(email="updatescript@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -205,7 +201,7 @@ class TestScheduleCRUD:
         assert data["name"] == "New Name"
         assert data["max_articles"] == 10
 
-    def test_delete_schedule(self, db: Session):
+    def test_delete_schedule(self, client, db: Session):
         """Test deleting a schedule"""
         user = User(email="deletescript@test.com", password_hash=hash_password("SecurePassword123"))
         db.add(user)
@@ -324,7 +320,7 @@ class TestScheduleExecutor:
         assert updated.next_run_at > old_next_run
 
 class TestScheduleAuthorization:
-    def test_schedule_requires_auth(self):
+    def test_schedule_requires_auth(self, client):
         """Test that schedule endpoints require authentication"""
         response = client.get("/api/schedules")
         assert response.status_code == 403
@@ -338,7 +334,7 @@ class TestScheduleAuthorization:
         )
         assert response.status_code == 403
 
-    def test_user_only_sees_own_schedules(self, db: Session):
+    def test_user_only_sees_own_schedules(self, client, db: Session):
         """Test that users only see their own schedules"""
         user1 = User(email="auth1sched@test.com", password_hash=hash_password("SecurePassword123"))
         user2 = User(email="auth2sched@test.com", password_hash=hash_password("SecurePassword123"))
