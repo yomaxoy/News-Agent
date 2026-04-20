@@ -3,23 +3,8 @@ from groq import Groq, APIError, RateLimitError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import os
 import logging
-import sys
 
 logger = logging.getLogger(__name__)
-
-# Monkey-patch httpx to handle proxies parameter compatibility
-try:
-    import httpx
-    _original_init = httpx.Client.__init__
-
-    def patched_init(self, *args, **kwargs):
-        # Remove proxies if it exists (incompatible with some versions)
-        kwargs.pop('proxies', None)
-        return _original_init(self, *args, **kwargs)
-
-    httpx.Client.__init__ = patched_init
-except Exception as e:
-    logger.debug(f"Could not patch httpx: {e}")
 
 class GroqClient:
     def __init__(self, api_key: str = None):
