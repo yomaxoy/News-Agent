@@ -1,5 +1,5 @@
 """Groq API integration for digest generation"""
-from openai import OpenAI, APIError, RateLimitError
+from groq import Groq, APIError, RateLimitError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import os
 import logging
@@ -13,10 +13,7 @@ class GroqClient:
         if not self.api_key:
             raise ValueError("GROQ_API_KEY not configured")
 
-        self.client = OpenAI(
-            base_url="https://api.groq.com/openai/v1",
-            api_key=self.api_key,
-        )
+        self.client = Groq(api_key=self.api_key)
         self.circuit_breaker_open = False
         self.circuit_breaker_attempts = 0
         self.max_failures = 3
@@ -63,3 +60,4 @@ class GroqClient:
     def is_available(self) -> bool:
         """Check if Groq service is available"""
         return not self.circuit_breaker_open or self.circuit_breaker_attempts < self.max_failures
+
