@@ -1,10 +1,12 @@
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-from typing import Optional
 
 class Settings(BaseSettings):
-    # Database (optional for MVP)
-    DATABASE_URL: Optional[str] = None
+    model_config = ConfigDict(env_file=".env")
+
+    # Database
+    DATABASE_URL: str = "postgresql://user:password@localhost:5432/news_agent_db"
     SQLALCHEMY_ECHO: bool = False
 
     # Security
@@ -12,24 +14,21 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # External APIs (optional)
-    GROQ_API_KEY: Optional[str] = None
-    SENDGRID_API_KEY: Optional[str] = None
-    GOOGLE_APPLICATION_CREDENTIALS: Optional[str] = None
+    # External APIs
+    GROQ_API_KEY: str = ""
+    SENDGRID_API_KEY: str = ""
+    GOOGLE_APPLICATION_CREDENTIALS: str = ""
 
-    # Redis (optional)
-    REDIS_URL: Optional[str] = None
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379"
 
-    # Celery (optional)
-    CELERY_BROKER_URL: Optional[str] = None
-    CELERY_RESULT_BACKEND: Optional[str] = None
+    # Celery
+    CELERY_BROKER_URL: str = "redis://localhost:6379"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379"
 
     # App
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
-
-    class Config:
-        env_file = ".env"
 
 @lru_cache()
 def get_settings():

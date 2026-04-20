@@ -9,7 +9,7 @@ on:
 jobs:
   test-backend:
     runs-on: ubuntu-latest
-
+    
     services:
       postgres:
         image: postgres:14
@@ -37,16 +37,18 @@ jobs:
       - name: Install dependencies
         working-directory: ./backend
         run: |
-          pip install -e .
-          pip install pytest pytest-asyncio pytest-cov
+          pip install -e .[dev]
+          pip install pytest-cov
       
       - name: Run tests
         working-directory: ./backend
-        run: pytest tests/ -v
+        run: pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
 
-      - name: Run coverage
-        working-directory: ./backend
-        run: pytest tests/ --cov=app --cov-report=xml
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage.xml
+          fail_ci_if_error: false
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -57,7 +59,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       
@@ -119,18 +121,16 @@ jobs:
     needs: test-frontend
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
+    
     steps:
       - uses: actions/checkout@v4
-
-      - name: Trigger Vercel deployment
-        continue-on-error: true
-        run: |
-          if [ -z "$VERCEL_WEBHOOK" ]; then
-            echo "Vercel webhook not configured - manual deployment needed"
-            echo "Frontend is ready for manual deployment to Vercel"
-          else
-            curl -X POST "$VERCEL_WEBHOOK"
-          fi
+      
+      - name: Deploy to Vercel
+        uses: vercel/action@v4
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: frontend
         env:
-          VERCEL_WEBHOOK: ${{ secrets.VERCEL_WEBHOOK }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.API_URL }}
