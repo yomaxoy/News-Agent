@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy application
-COPY . .
+# Copy only backend directory
+COPY backend/ .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir .
