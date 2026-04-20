@@ -12,6 +12,8 @@ authors = [{name = "News Agent Team"}]
 dependencies = [
     "fastapi==0.104.1",
     "uvicorn[standard]==0.24.0",
+    "starlette==0.27.0",
+    "httpx==0.25.2",
     "sqlalchemy==2.0.23",
     "psycopg2-binary==2.9.9",
     "alembic==1.12.1",
@@ -47,6 +49,8 @@ dev = [
     "mypy==1.7.1",
     "argon2-cffi==21.3.0",
     "sendgrid==6.12.5",
+    "starlette==0.27.0",
+    "httpx==0.25.2",
 ]
 
 [tool.hatch.build.targets.wheel]

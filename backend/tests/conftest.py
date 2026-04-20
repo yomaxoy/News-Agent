@@ -2,7 +2,6 @@ import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from fastapi.testclient import TestClient
 import os
 import sys
 
@@ -59,4 +58,5 @@ def db():
 @pytest.fixture(scope="function")
 def client():
     """FastAPI test client"""
+    from starlette.testclient import TestClient
     return TestClient(app)
