@@ -16,3 +16,4 @@ croniter==2.0.1
 groq==0.4.2
 google-cloud-texttospeech==2.16.0
 tenacity==8.2.3
+openai==1.5.0
