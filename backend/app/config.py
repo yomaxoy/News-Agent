@@ -1,7 +1,10 @@
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file=".env")
+
     # Database
     DATABASE_URL: str = "postgresql://user:password@localhost:5432/news_agent_db"
     SQLALCHEMY_ECHO: bool = False
@@ -26,9 +29,6 @@ class Settings(BaseSettings):
     # App
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
-
-    class Config:
-        env_file = ".env"
 
 @lru_cache()
 def get_settings():
