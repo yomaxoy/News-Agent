@@ -1,6 +1,7 @@
 """Groq API integration for digest generation"""
 from groq import Groq, APIError, RateLimitError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import httpx
 import os
 import logging
 
@@ -8,12 +9,20 @@ logger = logging.getLogger(__name__)
 
 class GroqClient:
     def __init__(self, api_key: str = None):
-        """Initialize Groq client"""
+        """Initialize Groq client with custom httpx client"""
         self.api_key = api_key or os.environ.get("GROQ_API_KEY")
         if not self.api_key:
             raise ValueError("GROQ_API_KEY not configured")
 
-        self.client = Groq(api_key=self.api_key)
+        try:
+            # Create custom httpx client to avoid version compatibility issues
+            http_client = httpx.Client(timeout=30.0)
+            self.client = Groq(api_key=self.api_key, http_client=http_client)
+        except Exception as e:
+            # Fallback: try without custom http_client
+            logger.warning(f"Failed to create custom httpx client: {e}, using default")
+            self.client = Groq(api_key=self.api_key)
+
         self.circuit_breaker_open = False
         self.circuit_breaker_attempts = 0
         self.max_failures = 3
