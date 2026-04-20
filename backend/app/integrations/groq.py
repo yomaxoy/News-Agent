@@ -1,28 +1,34 @@
 """Groq API integration for digest generation"""
 from groq import Groq, APIError, RateLimitError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-import httpx
 import os
 import logging
+import sys
 
 logger = logging.getLogger(__name__)
 
+# Monkey-patch httpx to handle proxies parameter compatibility
+try:
+    import httpx
+    _original_init = httpx.Client.__init__
+
+    def patched_init(self, *args, **kwargs):
+        # Remove proxies if it exists (incompatible with some versions)
+        kwargs.pop('proxies', None)
+        return _original_init(self, *args, **kwargs)
+
+    httpx.Client.__init__ = patched_init
+except Exception as e:
+    logger.debug(f"Could not patch httpx: {e}")
+
 class GroqClient:
     def __init__(self, api_key: str = None):
-        """Initialize Groq client with custom httpx client"""
+        """Initialize Groq client"""
         self.api_key = api_key or os.environ.get("GROQ_API_KEY")
         if not self.api_key:
             raise ValueError("GROQ_API_KEY not configured")
 
-        try:
-            # Create custom httpx client to avoid version compatibility issues
-            http_client = httpx.Client(timeout=30.0)
-            self.client = Groq(api_key=self.api_key, http_client=http_client)
-        except Exception as e:
-            # Fallback: try without custom http_client
-            logger.warning(f"Failed to create custom httpx client: {e}, using default")
-            self.client = Groq(api_key=self.api_key)
-
+        self.client = Groq(api_key=self.api_key)
         self.circuit_breaker_open = False
         self.circuit_breaker_attempts = 0
         self.max_failures = 3
