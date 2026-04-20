@@ -108,8 +108,16 @@ async def run_schedule_now(
 
     articles = DigestService.deduplicate_articles(articles)
 
+    print(f"[DEBUG] After deduplication: {len(articles)} articles")
+    for article in articles[:3]:
+        print(f"  - {article.title[:50]}")
+
     # Generate digest
     digest_content = DigestService.generate_digest(articles, max_articles=schedule.max_articles)
+
+    print(f"[DEBUG] Generated digest length: {len(digest_content or '')}")
+    if digest_content:
+        print(f"[DEBUG] Digest preview: {digest_content[:100]}")
 
     # Save digest
     digest = DigestService.save_digest(db, schedule_id, digest_content)
