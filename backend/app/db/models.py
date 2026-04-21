@@ -50,6 +50,8 @@ class Schedule(Base):
     next_run_at = Column(DateTime, nullable=True)
     last_run_at = Column(DateTime, nullable=True)
     max_articles = Column(Integer, default=7)
+    profile = Column(String(500), default="Allgemeine Nachrichten")
+    language = Column(String(50), default="Deutsch")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

@@ -40,10 +40,13 @@ class DigestService:
                 for entry in feed.entries[:15]:
                     # Get article date
                     published = entry.get("published_parsed") or entry.get("updated_parsed")
-                    if published:
-                        pub_dt = datetime(*published[:6], tzinfo=timezone.utc)
-                        if pub_dt < cutoff:
-                            continue
+                    if not published:
+                        logger.warning(f"Article from {source.name} has no publication date, skipping: {entry.get('title', 'Unknown')[:50]}")
+                        continue
+
+                    pub_dt = datetime(*published[:6], tzinfo=timezone.utc)
+                    if pub_dt < cutoff:
+                        continue
 
                     # Check if article already exists
                     external_id = entry.get("id", entry.get("link", ""))

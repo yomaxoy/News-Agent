@@ -11,6 +11,8 @@ export const scheduleSchema = z.object({
   cron_expression: z.string().min(1, "Cron expression is required"),
   timezone: z.string(),
   max_articles: z.number().int().min(1).max(50),
+  profile: z.string().min(1, "Profile is required").default("Allgemeine Nachrichten"),
+  language: z.string().default("Deutsch"),
 });
 
 export const deliveryChannelSchema = z.object({

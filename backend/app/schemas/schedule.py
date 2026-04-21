@@ -9,6 +9,8 @@ class ScheduleBase(BaseModel):
     cron_expression: str = Field(..., min_length=5, max_length=255)
     timezone: Optional[str] = "UTC"
     max_articles: Optional[int] = 7
+    profile: Optional[str] = "Allgemeine Nachrichten"
+    language: Optional[str] = "Deutsch"
 
     @field_validator("cron_expression")
     @classmethod
@@ -26,6 +28,8 @@ class ScheduleUpdate(BaseModel):
     timezone: Optional[str] = None
     max_articles: Optional[int] = None
     is_active: Optional[bool] = None
+    profile: Optional[str] = None
+    language: Optional[str] = None
 
     @field_validator("cron_expression")
     @classmethod
@@ -41,6 +45,8 @@ class ScheduleResponse(ScheduleBase):
     next_run_at: Optional[datetime] = None
     last_run_at: Optional[datetime] = None
     created_at: datetime
+    profile: str
+    language: str
 
     model_config = {"from_attributes": True}
 

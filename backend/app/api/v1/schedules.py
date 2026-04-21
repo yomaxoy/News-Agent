@@ -109,8 +109,13 @@ async def run_schedule_now(
 
     articles = DigestService.deduplicate_articles(articles)
 
-    # Generate digest
-    digest_content = DigestService.generate_digest(articles, max_articles=schedule.max_articles)
+    # Generate digest with user preferences
+    digest_content = DigestService.generate_digest(
+        articles,
+        profile=schedule.profile,
+        language=schedule.language,
+        max_articles=schedule.max_articles
+    )
 
     # Ensure content is never None or empty
     if not digest_content or not digest_content.strip():
