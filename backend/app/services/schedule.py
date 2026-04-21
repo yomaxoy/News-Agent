@@ -36,6 +36,8 @@ class ScheduleService:
             cron_expression=schedule_create.cron_expression,
             timezone=schedule_create.timezone or "UTC",
             max_articles=schedule_create.max_articles or 7,
+            profile=schedule_create.profile or "Allgemeine Nachrichten",
+            language=schedule_create.language or "Deutsch",
             next_run_at=next_run,
             is_active=True
         )
@@ -122,6 +124,12 @@ class ScheduleService:
 
         if schedule_update.is_active is not None:
             schedule.is_active = schedule_update.is_active
+
+        if schedule_update.profile is not None:
+            schedule.profile = schedule_update.profile
+
+        if schedule_update.language is not None:
+            schedule.language = schedule_update.language
 
         db.commit()
         db.refresh(schedule)
