@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 from app.api.v1 import auth, sources, schedules, delivery, digests
-from app.core.config import settings
+from app.config import settings
 import logging
 
 load_dotenv()
