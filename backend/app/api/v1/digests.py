@@ -37,7 +37,7 @@ async def list_digests(
             "schedule_name": digest.schedule.name,
             "content_text": digest.content_text,
             "status": digest.status,
-            "created_at": digest.created_at.isoformat()
+            "created_at": digest.created_at.isoformat() + "Z"
         })
 
     return result
@@ -72,5 +72,5 @@ async def get_digest(
         "schedule_name": schedule.name,
         "content_text": digest.content_text,
         "status": digest.status,
-        "created_at": digest.created_at.isoformat()
+        "created_at": digest.created_at.isoformat() + "Z"
     }
