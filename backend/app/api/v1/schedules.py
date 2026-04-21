@@ -2,6 +2,8 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from datetime import datetime
+import json
+import logging
 from app.db.database import get_db
 from app.core.security import get_current_user
 from app.schemas.schedule import (
@@ -12,7 +14,10 @@ from app.schemas.schedule import (
 )
 from app.services.schedule import ScheduleService
 from app.services.digest import DigestService
+from app.services.delivery import DeliveryService
 from app.db.models import ScheduleSource
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/schedules", tags=["schedules"])
 
@@ -127,9 +132,41 @@ async def run_schedule_now(
     # Update schedule last_run_at
     ScheduleService.mark_schedule_run(db, schedule_id)
 
+    # Send digest to configured delivery channels
+    delivery_results = {}
+    for channel in schedule.delivery_channels:
+        if not channel.is_enabled:
+            continue
+
+        try:
+            channel_config = json.loads(channel.config) if isinstance(channel.config, str) else channel.config
+
+            if channel.type == "discord":
+                success = DeliveryService.deliver_via_discord(
+                    webhook_url=channel_config.get("webhook_url"),
+                    content=digest_content
+                )
+                delivery_results["discord"] = "sent" if success else "failed"
+
+            elif channel.type == "email":
+                success = DeliveryService.deliver_via_email(
+                    email=channel_config.get("email"),
+                    subject=f"News Digest – {datetime.now().strftime('%Y-%m-%d')}",
+                    html_content=digest_content,
+                    sendgrid_api_key=None  # Uses env var from config
+                )
+                delivery_results["email"] = "sent" if success else "failed"
+            else:
+                logger.warning(f"Unknown delivery channel type: {channel.type}")
+
+        except Exception as e:
+            logger.error(f"Error sending digest via {channel.type}: {e}")
+            delivery_results[channel.type] = f"error: {str(e)[:50]}"
+
     return {
         "status": "success",
         "digest_id": digest.id,
         "articles_processed": len(articles),
-        "message": f"Digest generated with {len(articles)} articles"
+        "message": f"Digest generated with {len(articles)} articles",
+        "deliveries": delivery_results
     }
