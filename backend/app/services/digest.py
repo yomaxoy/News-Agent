@@ -210,10 +210,16 @@ End with a brief summary of the most important trend today."""
         content: str,
         content_format: str = "markdown"
     ) -> Digest:
-        """Save generated digest to database"""
+        """Save generated digest to database
+
+        Args:
+            content_format: "text", "markdown", or "html"
+                - text/markdown stored in content_text
+                - html stored in content_html
+        """
         digest = Digest(
             schedule_id=schedule_id,
-            content_text=content if content_format == "text" else content,
+            content_text=content if content_format != "html" else None,
             content_html=content if content_format == "html" else None,
             status="generated"
         )
