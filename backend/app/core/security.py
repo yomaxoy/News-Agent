@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 from app.config import settings
 
@@ -55,16 +55,24 @@ def verify_token(token: str) -> Optional[int]:
     except JWTError:
         return None
 
-async def get_current_user(credentials = Depends(security)) -> int:
-    """Get current authenticated user from JWT token"""
-    if credentials is None:
+async def get_current_user(credentials = Depends(security), request: Request = Depends()) -> int:
+    """Get current authenticated user from JWT token (header or httpOnly cookie)"""
+    token = None
+
+    # Try Bearer token in Authorization header first
+    if credentials is not None:
+        token = credentials.credentials
+    # Fall back to httpOnly cookie
+    elif request is not None:
+        token = request.cookies.get("auth_token")
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Missing authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials
     user_id = verify_token(token)
 
     if user_id is None:

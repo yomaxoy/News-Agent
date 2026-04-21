@@ -25,7 +25,7 @@ from app.config import settings
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_create: UserCreate, db: Session = Depends(get_db), response: Response = None):
+async def register(user_create: UserCreate, db: Session = Depends(get_db), response: Response = Depends()):
     """Register a new user"""
     user = AuthService.register(db, user_create)
     token = create_access_token(user_id=user.id)
@@ -48,7 +48,7 @@ async def register(user_create: UserCreate, db: Session = Depends(get_db), respo
     )
 
 @router.post("/login", response_model=TokenResponse)
-async def login(user_login: UserLogin, db: Session = Depends(get_db), response: Response = None):
+async def login(user_login: UserLogin, db: Session = Depends(get_db), response: Response = Depends()):
     """Login user"""
     user, token = AuthService.login(db, user_login)
 
