@@ -85,48 +85,57 @@ export default function SourcesPage() {
         <div className="mt-6 text-center">
           <p className="text-gray-600">Loading sources...</p>
         </div>
-      ) : sources.length === 0 ? (
-        <div className="mt-12">
-          <div className="text-center mb-8">
-            <p className="text-gray-600 mb-4">No sources yet</p>
-            <Link
-              href="/dashboard/sources/new"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100"
-            >
-              Create your first source
-            </Link>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Add Popular Sources</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {QUICK_ADD_SOURCES.map((source) => (
-                <button
-                  key={source.name}
-                  onClick={() => handleQuickAdd(source)}
-                  disabled={addingSource === source.name}
-                  className="p-3 text-left border border-gray-300 rounded-md hover:border-blue-500 hover:bg-blue-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="font-medium text-gray-900">{source.name}</div>
-                  <div className="text-sm text-gray-500">{source.category}</div>
-                  {addingSource === source.name && (
-                    <div className="mt-2 text-xs text-blue-600">Adding...</div>
-                  )}
-                </button>
+      ) : (
+        <>
+          {sources.length === 0 ? (
+            <div className="mt-12 text-center mb-8">
+              <p className="text-gray-600 mb-4">No sources yet</p>
+              <Link
+                href="/dashboard/sources/new"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100"
+              >
+                Create your first source
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              {sources.map((source) => (
+                <SourceCard
+                  key={source.id}
+                  source={source}
+                  onDelete={handleSourceDeleted}
+                />
               ))}
             </div>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-6 space-y-4">
-          {sources.map((source) => (
-            <SourceCard
-              key={source.id}
-              source={source}
-              onDelete={handleSourceDeleted}
-            />
-          ))}
-        </div>
+          )}
+
+          {(() => {
+            const existingUrls = new Set(sources.map((s) => s.url));
+            const available = QUICK_ADD_SOURCES.filter((s) => !existingUrls.has(s.url));
+            if (available.length === 0) return null;
+            return (
+              <div className="mt-8 bg-gray-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Add Popular Sources</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {available.map((source) => (
+                    <button
+                      key={source.name}
+                      onClick={() => handleQuickAdd(source)}
+                      disabled={addingSource === source.name}
+                      className="p-3 text-left border border-gray-300 rounded-md hover:border-blue-500 hover:bg-blue-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="font-medium text-gray-900">{source.name}</div>
+                      <div className="text-sm text-gray-500">{source.category}</div>
+                      {addingSource === source.name && (
+                        <div className="mt-2 text-xs text-blue-600">Adding...</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </>
       )}
     </div>
   );

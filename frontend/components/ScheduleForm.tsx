@@ -42,6 +42,8 @@ export default function ScheduleForm({
       cron_expression: "0 6 * * *",
       timezone: "UTC",
       max_articles: 7,
+      profile: "Allgemeine Nachrichten",
+      language: "Deutsch",
     },
   });
 
