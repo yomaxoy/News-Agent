@@ -35,7 +35,7 @@ async def list_digests(
             "id": digest.id,
             "schedule_id": digest.schedule_id,
             "schedule_name": digest.schedule.name,
-            "content": digest.content_text,
+            "content_text": digest.content_text,
             "status": digest.status,
             "created_at": digest.created_at.isoformat()
         })
@@ -70,7 +70,7 @@ async def get_digest(
         "id": digest.id,
         "schedule_id": digest.schedule_id,
         "schedule_name": schedule.name,
-        "content": digest.content_text,
+        "content_text": digest.content_text,
         "status": digest.status,
         "created_at": digest.created_at.isoformat()
     }
