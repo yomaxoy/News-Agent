@@ -2,18 +2,22 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Build timestamp: 2026-04-17_22-23 (force rebuild)
-ENV BUILD_TIME="2026-04-17_22:23"
-RUN echo "Cache invalidation: $(date)" && rm -rf /usr/local/lib/python3.12/dist-packages/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies (using deps.txt to bypass Railway caching)
-COPY deps.txt .
-RUN pip install --upgrade pip && pip install --no-cache-dir -r deps.txt
+# Install Python dependencies from backend/pyproject.toml (single source of truth)
+COPY backend/pyproject.toml ./backend/
+WORKDIR /app/backend
+RUN pip install --upgrade pip && pip install --no-cache-dir -e .
 
 # Copy application code
+WORKDIR /app
 COPY . .
 
-# Set working directory to backend
+# Set working directory to backend for runtime
 WORKDIR /app/backend
 
 # Start command (run migrations first, use PORT env var for Railway compatibility)
