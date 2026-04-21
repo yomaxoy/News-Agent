@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     SQLALCHEMY_ECHO: bool = False
 
     # Security
-    SECRET_KEY: str = "your-secret-key-here-change-in-production"
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
@@ -18,13 +18,6 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     SENDGRID_API_KEY: str = ""
     GOOGLE_APPLICATION_CREDENTIALS: str = ""
-
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379"
-
-    # Celery
-    CELERY_BROKER_URL: str = "redis://localhost:6379"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379"
 
     # App
     DEBUG: bool = False
