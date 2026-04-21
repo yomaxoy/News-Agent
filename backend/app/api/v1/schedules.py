@@ -100,16 +100,26 @@ async def run_schedule_now(
             detail="Schedule has no sources configured"
         )
 
-    # Fetch and process articles
+    # Fetch and process articles with fallback logic
     articles = DigestService.fetch_articles_from_sources(
-        db, source_ids, schedule.max_articles
+        db, source_ids, schedule.max_articles, max_age_hours=24
     )
+
+    fallback_message = ""
+
+    if not articles:
+        logger.info(f"No articles found in last 24 hours for schedule {schedule_id}, trying last 7 days...")
+        fallback_message = "⚠️ Keine Artikel in den vergangenen 24 Stunden gefunden. Suche nach Artikeln der letzten 7 Tage...\n\n"
+
+        articles = DigestService.fetch_articles_from_sources(
+            db, source_ids, schedule.max_articles, max_age_hours=168  # 7 days
+        )
 
     if not articles:
         from fastapi import HTTPException
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No articles found from configured sources"
+            detail="Es gibt keine aktuellen Artikel in den konfigurierten Quellen (weder in den letzten 24 Stunden noch in den letzten 7 Tagen)"
         )
 
     articles = DigestService.deduplicate_articles(articles)
@@ -121,6 +131,10 @@ async def run_schedule_now(
         language=schedule.language,
         max_articles=schedule.max_articles
     )
+
+    # Prepend fallback message if articles were fetched from older time period
+    if fallback_message:
+        digest_content = fallback_message + digest_content
 
     # Ensure content is never None or empty
     if not digest_content or not digest_content.strip():
