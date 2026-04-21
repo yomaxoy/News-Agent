@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { SessionProvider } from "next-auth/react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 
@@ -13,8 +12,7 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <SessionProvider>
-      <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div
@@ -42,6 +40,5 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
-    </SessionProvider>
   );
 }

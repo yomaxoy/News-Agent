@@ -7,18 +7,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-});
-
-// Request interceptor to add JWT token
-api.interceptors.request.use(async (config) => {
-  // Try to get token from sessionStorage first (set during login)
-  let token = typeof window !== 'undefined' ? sessionStorage.getItem('auth_token') : null;
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
+  withCredentials: true,
 });
 
 api.interceptors.response.use(

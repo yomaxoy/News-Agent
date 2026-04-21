@@ -34,24 +34,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Get token directly from backend for authenticated requests
-      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/+$/, "");
-      const tokenRes = await fetch(`${apiUrl}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
-      });
-
-      if (tokenRes.ok) {
-        const tokenData = await tokenRes.json();
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('auth_token', tokenData.access_token);
-        }
-      }
-
       router.push("/dashboard");
     } catch (err) {
       setError("An error occurred. Please try again.");

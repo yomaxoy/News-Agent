@@ -1,5 +1,5 @@
 """Authentication endpoints"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.schemas.user import (
@@ -20,14 +20,25 @@ from app.core.security import (
     generate_verification_token,
     generate_password_reset_token,
 )
+from app.config import settings
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_create: UserCreate, db: Session = Depends(get_db)):
+async def register(user_create: UserCreate, db: Session = Depends(get_db), response: Response = None):
     """Register a new user"""
     user = AuthService.register(db, user_create)
     token = create_access_token(user_id=user.id)
+
+    # Set token in httpOnly cookie
+    response.set_cookie(
+        key="auth_token",
+        value=token,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="Lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
 
     return TokenResponse(
         access_token=token,
@@ -37,9 +48,19 @@ async def register(user_create: UserCreate, db: Session = Depends(get_db)):
     )
 
 @router.post("/login", response_model=TokenResponse)
-async def login(user_login: UserLogin, db: Session = Depends(get_db)):
+async def login(user_login: UserLogin, db: Session = Depends(get_db), response: Response = None):
     """Login user"""
     user, token = AuthService.login(db, user_login)
+
+    # Set token in httpOnly cookie
+    response.set_cookie(
+        key="auth_token",
+        value=token,
+        httponly=True,
+        secure=settings.ENVIRONMENT == "production",
+        samesite="Lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
 
     return TokenResponse(
         access_token=token,

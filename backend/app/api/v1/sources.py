@@ -43,8 +43,11 @@ async def get_categories():
     return CategoriesResponse(categories=AVAILABLE_CATEGORIES)
 
 @router.post("/test", response_model=FeedTestResponse)
-async def test_feed(request: FeedTestRequest):
-    """Test if a URL is a valid RSS feed"""
+async def test_feed(
+    request: FeedTestRequest,
+    user_id: int = Depends(get_current_user)
+):
+    """Test if a URL is a valid RSS feed (auth required to prevent SSRF)"""
     result = SourceService.test_feed(request.url)
     return result
 

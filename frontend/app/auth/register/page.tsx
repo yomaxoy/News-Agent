@@ -55,12 +55,6 @@ export default function RegisterPage() {
         return;
       }
 
-      const responseData = await res.json();
-      // Store token for authenticated requests
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('auth_token', responseData.access_token);
-      }
-
       router.push("/auth/login?registered=true");
     } catch (err) {
       setError("An error occurred. Please try again.");

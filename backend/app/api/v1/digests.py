@@ -50,7 +50,11 @@ async def get_digest(
     db: Session = Depends(get_db)
 ):
     """Get digest details"""
-    digest = db.query(Digest).filter(Digest.id == digest_id).first()
+    # Ownership check BEFORE fetching content (prevents timing attacks)
+    digest = db.query(Digest).join(Schedule).filter(
+        Digest.id == digest_id,
+        Schedule.user_id == user_id
+    ).first()
 
     if not digest:
         raise HTTPException(
@@ -58,13 +62,7 @@ async def get_digest(
             detail="Digest not found"
         )
 
-    # Verify user owns the schedule
-    schedule = db.query(Schedule).filter(Schedule.id == digest.schedule_id).first()
-    if not schedule or schedule.user_id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to view this digest"
-        )
+    schedule = digest.schedule
 
     return {
         "id": digest.id,
