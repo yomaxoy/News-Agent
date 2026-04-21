@@ -1,6 +1,6 @@
 """Digest management endpoints"""
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 from app.db.database import get_db
 from app.core.security import get_current_user
@@ -17,30 +17,24 @@ async def list_digests(
     limit: int = 30
 ):
     """List all digests for authenticated user's schedules"""
-    # Get all schedules for this user
-    schedules = db.query(Schedule).filter(Schedule.user_id == user_id).all()
-    schedule_ids = [s.id for s in schedules]
-
-    if not schedule_ids:
-        return []
-
-    # Get digests for these schedules, ordered by newest first
-    digests = db.query(Digest).filter(
-        Digest.schedule_id.in_(schedule_ids)
+    # Single JOIN query: digests + schedule preloaded, filtered by ownership
+    digests = db.query(Digest).options(
+        joinedload(Digest.schedule)
+    ).join(Schedule).filter(
+        Schedule.user_id == user_id
     ).order_by(desc(Digest.created_at)).offset(skip).limit(limit).all()
 
-    result = []
-    for digest in digests:
-        result.append({
+    return [
+        {
             "id": digest.id,
             "schedule_id": digest.schedule_id,
             "schedule_name": digest.schedule.name,
             "content_text": digest.content_text,
             "status": digest.status,
-            "created_at": digest.created_at.isoformat() + "Z"
-        })
-
-    return result
+            "created_at": digest.created_at.isoformat()
+        }
+        for digest in digests
+    ]
 
 
 @router.get("/{digest_id}", response_model=dict)
@@ -51,7 +45,9 @@ async def get_digest(
 ):
     """Get digest details"""
     # Ownership check BEFORE fetching content (prevents timing attacks)
-    digest = db.query(Digest).join(Schedule).filter(
+    digest = db.query(Digest).options(
+        joinedload(Digest.schedule)
+    ).join(Schedule).filter(
         Digest.id == digest_id,
         Schedule.user_id == user_id
     ).first()
@@ -62,13 +58,11 @@ async def get_digest(
             detail="Digest not found"
         )
 
-    schedule = digest.schedule
-
     return {
         "id": digest.id,
         "schedule_id": digest.schedule_id,
-        "schedule_name": schedule.name,
+        "schedule_name": digest.schedule.name,
         "content_text": digest.content_text,
         "status": digest.status,
-        "created_at": digest.created_at.isoformat() + "Z"
+        "created_at": digest.created_at.isoformat()
     }
