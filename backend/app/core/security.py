@@ -55,7 +55,7 @@ def verify_token(token: str) -> Optional[int]:
     except JWTError:
         return None
 
-async def get_current_user(credentials = Depends(security), request: Request = Depends()) -> int:
+async def get_current_user(request: Request, credentials = Depends(security)) -> int:
     """Get current authenticated user from JWT token (header or httpOnly cookie)"""
     token = None
 
