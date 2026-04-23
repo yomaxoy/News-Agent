@@ -244,9 +244,9 @@ class TestRSSFeedValidation:
         assert "Business" in data["categories"]
         assert "News" in data["categories"]
 
-    def test_feed_test_valid_rss(self, client):
+    def test_feed_test_valid_rss(self, authenticated_client):
         """Test validating a valid RSS feed"""
-        response = client.post(
+        response = authenticated_client.post(
             "/api/sources/test",
             json={"url": "https://feeds.techcrunch.com/techcrunch/startups"}
         )
@@ -257,9 +257,9 @@ class TestRSSFeedValidation:
         assert "entries" in data
         assert isinstance(data["entries"], int)
 
-    def test_feed_test_invalid_url(self, client):
+    def test_feed_test_invalid_url(self, authenticated_client):
         """Test validating an invalid URL"""
-        response = client.post(
+        response = authenticated_client.post(
             "/api/sources/test",
             json={"url": "https://invalid-domain-that-does-not-exist-12345.xyz/feed"}
         )
@@ -268,9 +268,9 @@ class TestRSSFeedValidation:
         assert data["valid"] is False
         assert "error" in data
 
-    def test_feed_test_malformed_url(self, client):
+    def test_feed_test_malformed_url(self, authenticated_client):
         """Test validating a malformed URL"""
-        response = client.post(
+        response = authenticated_client.post(
             "/api/sources/test",
             json={"url": "not-a-valid-url"}
         )

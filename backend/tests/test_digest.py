@@ -174,8 +174,13 @@ class TestDigestGeneration:
         db.add(article)
         db.commit()
 
-        # Generate digest
-        digest_content = DigestService.generate_digest([article], max_articles=5)
+        # Generate digest with optional parameters
+        digest_content = DigestService.generate_digest(
+            [article],
+            max_articles=5,
+            schedule_name="Test Schedule",
+            source_names=["TechNews"]
+        )
 
         assert digest_content == "Generated digest content"
         mock_groq.create_completion.assert_called_once()
@@ -201,10 +206,15 @@ class TestDigestGeneration:
 
         # Generate digest without Groq configured
         with patch("app.services.digest.GroqClient", side_effect=ValueError("No API key")):
-            digest_content = DigestService.generate_digest([article])
+            digest_content = DigestService.generate_digest(
+                [article],
+                schedule_name="Fallback Test",
+                source_names=["TechNews"]
+            )
 
         assert "AI Breakthrough Fallback" in digest_content
-        assert "Daily News Digest" in digest_content
+        # Check for German greeting instead of old English format
+        assert "Hallo, ich bin Ihr persönlicher Nachrichtenkurator" in digest_content
 
     def test_generate_digest_empty_articles(self):
         """Test digest generation with no articles"""

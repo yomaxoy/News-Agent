@@ -60,3 +60,23 @@ def client():
     """FastAPI test client"""
     from starlette.testclient import TestClient
     return TestClient(app)
+
+@pytest.fixture(scope="function")
+def authenticated_client(client, db):
+    """FastAPI test client with authenticated user"""
+    import uuid
+    from app.db.models import User
+    from app.core.security import hash_password, create_access_token
+
+    # Create a test user with unique email
+    unique_email = f"test+{uuid.uuid4().hex[:8]}@example.com"
+    user = User(email=unique_email, password_hash=hash_password("TestPassword123"))
+    db.add(user)
+    db.commit()
+
+    # Create token for this user
+    token = create_access_token(user_id=user.id)
+
+    # Add auth header to all requests
+    client.headers = {"Authorization": f"Bearer {token}"}
+    return client

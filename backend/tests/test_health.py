@@ -4,7 +4,14 @@ def test_health_check(client):
     """Test health check endpoint"""
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "environment": "development"}
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["environment"] == "development"
+    assert "is_production" in data
+    assert data["is_production"] == False
+    assert "cookie_samesite" in data
+    assert "cookie_secure" in data
+    assert "cors_allow_origins" in data
 
 def test_root_endpoint(client):
     """Test root endpoint"""
