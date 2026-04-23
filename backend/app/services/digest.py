@@ -38,14 +38,13 @@ class DigestService:
                 feed = feedparser.parse(source.url)
 
                 for entry in feed.entries[:15]:
-                    # Get article date, use now() as fallback for feeds without dates
+                    # Skip articles without publication date
                     published = entry.get("published_parsed") or entry.get("updated_parsed")
-                    if published:
-                        pub_dt = datetime(*published[:6], tzinfo=timezone.utc)
-                    else:
-                        logger.warning(f"Article from {source.name} has no publication date, using current time: {entry.get('title', 'Unknown')[:50]}")
-                        pub_dt = datetime.now(timezone.utc)
+                    if not published:
+                        logger.warning(f"Article from {source.name} has no publication date, skipping: {entry.get('title', 'Unknown')[:50]}")
+                        continue
 
+                    pub_dt = datetime(*published[:6], tzinfo=timezone.utc)
                     if pub_dt < cutoff:
                         continue
 
@@ -68,7 +67,7 @@ class DigestService:
                         title=entry.get("title", "No Title")[:500],
                         summary=entry.get("summary", "")[:1000],
                         url=url,
-                        published_at=datetime(*published[:6], tzinfo=timezone.utc) if published else datetime.now(timezone.utc)
+                        published_at=pub_dt
                     )
                     db.add(article)
                     articles.append(article)
