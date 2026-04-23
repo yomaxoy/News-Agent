@@ -6,12 +6,11 @@ import SourceCard from "@/components/SourceCard";
 import api from "@/lib/api";
 
 const QUICK_ADD_SOURCES = [
-  { name: "BBC News", url: "http://feeds.bbc.co.uk/news/rss.xml", category: "News" },
-  { name: "Hacker News", url: "https://news.ycombinator.com/rss", category: "Technology" },
-  { name: "Dev.to", url: "https://dev.to/feed", category: "Technology" },
-  { name: "Python.org News", url: "https://feeds.python.org/python-dev/", category: "Technology" },
-  { name: "DW Deutsch", url: "https://www.dw.com/de/feed/rss", category: "News" },
-  { name: "Heise News", url: "https://www.heise.de/newsticker/heise-atom.xml", category: "Technology" },
+  { name: "Tagesschau", url: "https://www.tagesschau.de/xml/rss2/", category: "News" },
+  { name: "Der Spiegel", url: "https://www.spiegel.de/schlagzeilen/index.rss", category: "News" },
+  { name: "NPR News", url: "https://feeds.npr.org/1001/rss.xml", category: "News" },
+  { name: "Hacker News", url: "https://news.ycombinator.com/rss", category: "Tech" },
+  { name: "TechCrunch", url: "https://techcrunch.com/feed/", category: "Tech" },
 ];
 
 export default function SourcesPage() {
