@@ -30,7 +30,7 @@ async def register(user_create: UserCreate, response: Response, db: Session = De
     user = AuthService.register(db, user_create)
     token = create_access_token(user_id=user.id)
 
-    is_prod = settings.ENVIRONMENT == "production"
+    is_prod = settings.is_production
     response.set_cookie(
         key="auth_token",
         value=token,
@@ -52,7 +52,7 @@ async def login(user_login: UserLogin, response: Response, db: Session = Depends
     """Login user"""
     user, token = AuthService.login(db, user_login)
 
-    is_prod = settings.ENVIRONMENT == "production"
+    is_prod = settings.is_production
     response.set_cookie(
         key="auth_token",
         value=token,

@@ -28,22 +28,22 @@ async def startup_checks():
             raise RuntimeError("SECRET_KEY cannot use the default placeholder in production")
 
 # CORS configuration
-allowed_origins = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:3000"
-).split(",")
+# Browsers reject credentialed requests when allow_origins=["*"], so we use
+# allow_origin_regex=".*" instead which echoes the request origin back.
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
 
-if settings.ENVIRONMENT != "production":
-    # In development, allow all origins for easier testing
-    allowed_origins = ["*"]
+cors_kwargs = {
+    "allow_credentials": True,
+    "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"],
+}
+if allowed_origins:
+    cors_kwargs["allow_origins"] = allowed_origins
+else:
+    cors_kwargs["allow_origin_regex"] = ".*"
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Content-Type", "Authorization"],
-)
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 # Include routers
 app.include_router(auth.router)
@@ -55,7 +55,14 @@ app.include_router(digests.router)
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "ok", "environment": os.getenv("ENVIRONMENT", "development")}
+    return {
+        "status": "ok",
+        "environment": os.getenv("ENVIRONMENT", "development"),
+        "is_production": settings.is_production,
+        "cookie_samesite": "none" if settings.is_production else "lax",
+        "cookie_secure": settings.is_production,
+        "cors_allow_origins": allowed_origins if allowed_origins else "regex:.*",
+    }
 
 @app.get("/")
 async def root():

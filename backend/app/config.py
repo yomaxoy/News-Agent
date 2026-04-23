@@ -1,3 +1,4 @@
+import os
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from functools import lru_cache
@@ -22,6 +23,16 @@ class Settings(BaseSettings):
     # App
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
+
+    @property
+    def is_production(self) -> bool:
+        """Detect production via explicit ENVIRONMENT or Railway auto-set vars."""
+        return (
+            self.ENVIRONMENT == "production"
+            or bool(os.getenv("RAILWAY_ENVIRONMENT"))
+            or bool(os.getenv("RAILWAY_ENVIRONMENT_NAME"))
+            or bool(os.getenv("RAILWAY_PROJECT_ID"))
+        )
 
 @lru_cache()
 def get_settings():
