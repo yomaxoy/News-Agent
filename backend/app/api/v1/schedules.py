@@ -15,7 +15,7 @@ from app.schemas.schedule import (
 from app.services.schedule import ScheduleService
 from app.services.digest import DigestService
 from app.services.delivery import DeliveryService
-from app.db.models import ScheduleSource
+from app.db.models import ScheduleSource, Source
 
 logger = logging.getLogger(__name__)
 
@@ -124,12 +124,18 @@ async def run_schedule_now(
 
     articles = DigestService.deduplicate_articles(articles)
 
-    # Generate digest with user preferences
+    # Collect source names for digest header
+    sources = db.query(Source).filter(Source.id.in_(source_ids)).all()
+    source_names = [s.name for s in sources]
+
+    # Generate digest with user preferences and context
     digest_content = DigestService.generate_digest(
         articles,
         profile=schedule.profile,
         language=schedule.language,
-        max_articles=schedule.max_articles
+        max_articles=schedule.max_articles,
+        schedule_name=schedule.name,
+        source_names=source_names
     )
 
     # Prepend fallback message if articles were fetched from older time period

@@ -123,7 +123,9 @@ class DigestService:
         articles: List[Article],
         profile: str = "Technology and AI news",
         language: str = "English",
-        max_articles: int = 5
+        max_articles: int = 5,
+        schedule_name: Optional[str] = None,
+        source_names: Optional[List[str]] = None
     ) -> str:
         """Generate digest using Groq API"""
         if not articles:
@@ -133,7 +135,7 @@ class DigestService:
             groq = GroqClient()
         except ValueError as e:
             logger.error(f"Groq not configured: {e}")
-            return DigestService._fallback_digest(articles)
+            return DigestService._fallback_digest(articles, schedule_name=schedule_name, source_names=source_names)
 
         # Format articles for Groq
         articles_text = "\n\n".join(
@@ -145,10 +147,20 @@ class DigestService:
 
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
+        # Build sources list for header
+        sources_text = ""
+        if source_names:
+            sources_text = f"Durchsuchte Quellen: {', '.join(source_names)}\n"
+
+        schedule_text = ""
+        if schedule_name:
+            schedule_text = f"Schedule: {schedule_name}\n"
+
         prompt = f"""You are a personal news curator. Today is {today}.
 
 My Interest Profile: {profile}
 
+{schedule_text}{sources_text}
 Here are today's articles from various sources:
 
 {articles_text}
@@ -162,10 +174,13 @@ TASK:
 
 FORMAT:
 Create a well-structured daily digest.
-Use **bold** for article titles.
-Use --- as separator between articles.
-Begin with a brief greeting and today's date.
-End with a brief summary of the most important trend today."""
+- Begin with: "Hallo, ich bin Ihr persönlicher Nachrichtenkurator. Heute ist der {today}."
+- If schedule name exists, add: "Das ist der Digest für die Schedule '{schedule_name}'."
+- If sources exist, add: "Durchsucht wurden folgende Quellen: {', '.join(source_names)}"
+- Add the topic: "Gesucht nach Themen in: {profile}"
+- Use **bold** for article titles.
+- Use --- as separator between articles.
+- End with a brief summary of the most important trend today."""
 
         try:
             digest = groq.create_completion(
@@ -179,28 +194,39 @@ End with a brief summary of the most important trend today."""
             return DigestService._fallback_digest(articles)
 
     @staticmethod
-    def _fallback_digest(articles: List[Article]) -> str:
+    def _fallback_digest(
+        articles: List[Article],
+        schedule_name: Optional[str] = None,
+        source_names: Optional[List[str]] = None
+    ) -> str:
         """Fallback digest generation when Groq is unavailable"""
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        lines = [f"Daily News Digest – {today}\n", "=" * 50]
+        lines = [f"Hallo, ich bin Ihr persönlicher Nachrichtenkurator. Heute ist der {today}.\n"]
+
+        if schedule_name:
+            lines.append(f"Das ist der Digest für die Schedule '{schedule_name}'.")
+
+        if source_names:
+            lines.append(f"Durchsuchte Quellen: {', '.join(source_names)}")
+
+        lines.append("=" * 50)
 
         if not articles:
-            lines.append("\n⚠️ No articles available for this digest.")
-            lines.append("\nPlease check your sources are active and have recent content.")
+            lines.append("\n⚠️ Keine Artikel verfügbar für diesen Digest.")
+            lines.append("\nBitte überprüfen Sie, dass Ihre Quellen aktiv sind und aktuelle Inhalte haben.")
         else:
             for article in articles[:5]:
                 lines.append(f"\n**{article.title}**")
-                lines.append(f"Source: {article.source.name}")
+                lines.append(f"Quelle: {article.source.name}")
                 if article.summary:
                     lines.append(article.summary[:300])
                 else:
-                    lines.append("(No summary available)")
+                    lines.append("(Keine Zusammenfassung verfügbar)")
                 if article.url:
-                    lines.append(f"Read more: {article.url}")
+                    lines.append(f"Mehr lesen: {article.url}")
                 lines.append("---")
 
         digest_text = "\n".join(lines)
-        # Ensure we never return empty string
         return digest_text if digest_text.strip() else "Daily News Digest Generated"
 
     @staticmethod
