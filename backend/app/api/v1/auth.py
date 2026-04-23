@@ -30,13 +30,13 @@ async def register(user_create: UserCreate, response: Response, db: Session = De
     user = AuthService.register(db, user_create)
     token = create_access_token(user_id=user.id)
 
-    # Set token in httpOnly cookie
+    is_prod = settings.ENVIRONMENT == "production"
     response.set_cookie(
         key="auth_token",
         value=token,
         httponly=True,
-        secure=settings.ENVIRONMENT == "production",
-        samesite="Lax",
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 
@@ -52,13 +52,13 @@ async def login(user_login: UserLogin, response: Response, db: Session = Depends
     """Login user"""
     user, token = AuthService.login(db, user_login)
 
-    # Set token in httpOnly cookie
+    is_prod = settings.ENVIRONMENT == "production"
     response.set_cookie(
         key="auth_token",
         value=token,
         httponly=True,
-        secure=settings.ENVIRONMENT == "production",
-        samesite="Lax",
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 
