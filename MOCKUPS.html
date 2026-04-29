@@ -483,12 +483,14 @@
             // Update button styling
             const buttons = document.querySelectorAll('.tab-btn');
             buttons.forEach(btn => {
-                btn.classList.remove('border-purple-600', 'text-purple-600');
-                btn.classList.add('border-transparent', 'text-gray-600');
+                btn.style.borderBottomColor = 'transparent';
+                btn.style.color = '#4b5563';
             });
 
-            event.target.classList.remove('border-transparent', 'text-gray-600');
-            event.target.classList.add('border-purple-600', 'text-purple-600');
+            // Style active button
+            const activeBtn = event.currentTarget;
+            activeBtn.style.borderBottomColor = '#9333ea';
+            activeBtn.style.color = '#9333ea';
         }
     </script>
 </body>
